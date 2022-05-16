@@ -1,0 +1,85 @@
+setwd("C://Your_Path")
+## Determining The Optimal Number Of Clusters
+
+# Direct methods: consists of optimizing a criterion, such as the within cluster sums of squares or the average silhouette.
+# The corresponding methods are named elbow and silhouette methods, respectively.
+# Statistical testing methods: consists of comparing evidence against null hypothesis. An example is the gap statistic
+
+# The Elbow method looks at the total WSS (within-cluster sum of square) as a function of the number of clusters: 
+# One should choose a number of clusters so that adding another cluster doesn’t improve much better the total WSS.
+
+# Average silhouette method measures the quality of a clustering.
+# It determines how well each object lies within its cluster. A high average silhouette width indicates a good clustering.
+
+BiocManager::install("NbClust", INSTALL_opts = "--no-lock", force = TRUE)
+BiocManager::install("factoextra", INSTALL_opts = "--no-lock", force = TRUE)
+
+library("factoextra")
+library("NbClust")
+
+# fviz_nbclust() function: Elbow, Silhouhette and Gap statistic methods
+
+# fviz_nbclust(r.data1_matrix, FUNcluster, method = c("silhouette", "wss", "gap_stat"))
+# x: numeric matrix or data frame
+# FUNcluster: a partitioning function. Allowed values include kmeans, pam, clara and hcut (for hierarchical clustering).
+# method: the method to be used for determining the optimal number of clusters.
+
+# Elbow method
+fviz_nbclust(Your_Data, kmeans, method = "wss") +
+    geom_vline(xintercept = 4, linetype = 2)+
+  labs(subtitle = "Elbow method")
+
+dev.copy(tiff,"Your_Data.tiff",width=7, height=7, units="in",res=200) 
+dev.off() 
+
+fviz_nbclust(Your_Data, kmeans, method = "wss") +
+    geom_vline(xintercept = 4, linetype = 2)+
+  labs(subtitle = "Elbow method")
+
+dev.copy(tiff,"Your_Data.tiff",width=7, height=7, units="in",res=200) 
+dev.off() 
+
+
+# Silhouette method
+fviz_nbclust(Your_Data, kmeans, method = "silhouette")+
+  labs(subtitle = "Silhouette method")
+
+dev.copy(tiff,"Your_Data.tiff",width=7, height=7, units="in",res=200) 
+dev.off() 
+
+fviz_nbclust(Your_Data, kmeans, method = "silhouette")+
+  labs(subtitle = "Silhouette method")
+
+dev.copy(tiff,"Your_Data.tiff",width=7, height=7, units="in",res=200) 
+dev.off() 
+
+
+# Gap statistic
+# nboot = 50 to keep the function speedy. 
+# recommended value: nboot= 500 for your analysis.
+# Use verbose = FALSE to hide computing progression.
+set.seed(123)
+fviz_nbclust(r.data1_matrix, kmeans, nstart = 25,  method = "gap_stat", nboot = 50)+
+  labs(subtitle = "Gap statistic method")
+
+# NbClust(data = NULL, diss = NULL, distance = "euclidean",
+#       min.nc = 2, max.nc = 15, method = NULL)
+
+#data: matrix
+#diss: dissimilarity matrix to be used. By default, diss=NULL, but if it is replaced by a dissimilarity matrix, distance should be “NULL”
+#distance: the distance measure to be used to compute the dissimilarity matrix. Possible values include “euclidean”, “manhattan” or “NULL”.
+#min.nc, max.nc: minimal and maximal number of clusters, respectively
+#method: The cluster analysis method to be used including “ward.D”, “ward.D2”, “single”, “complete”, “average”, “kmeans” and more.
+
+nb <- NbClust(r.data1_matrix, distance = "euclidean", min.nc = 2,
+        max.nc = 10, method = "kmeans")
+
+
+### Silhouette method tells us it's clustered with 2,2
+
+library(ComplexHeatmap)
+data1<-read.table("Your_Data.txt", header=T, sep="\t", na.strings = "NA", fill=T)
+row.names(data1)<-data1$CellLine
+r.data1<-data1[,2:ncol(data1)]
+r.data1_matrix<-data.matrix(r.data1)
+Heatmap(Your_Data, name = "AUC", row_km = 2, row_km_repeats = 500, column_km = 2, column_km_repeats = 500)
