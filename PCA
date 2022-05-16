@@ -1,0 +1,124 @@
+setwd("C://Your_Path")
+
+BiocManager::install("FactoMineR", dependencies=TRUE, INSTALL_opts = "--no-lock", force = TRUE)
+BiocManager::install("colorspace", dependencies=TRUE, INSTALL_opts = "--no-lock", force = TRUE)
+BiocManager::install("utf8", INSTALL_opts = "--no-lock", force = TRUE)
+BiocManager::install("factoextra", INSTALL_opts = "--no-lock", force = TRUE)
+
+library("FactoMineR")
+library("factoextra")
+data1 <- read.table("Your_Data.txt", header=T, sep="\t", na.strings = "NA", fill=T)=
+just.raw.counts = read.delim("Your_Data_genename.txt", row.names = 1)
+just.raw.counts_t <- t(just.raw.counts)
+just.raw.counts_2 <- just.raw.counts[,14:19]
+just.raw.counts_2t <- t(just.raw.counts_2)
+
+# Basic R function
+BP<-PCA(just.raw.counts, scale.unit = TRUE, ncp = 3, graph = TRUE)
+BP<-PCA(just.raw.counts_2t, scale.unit = TRUE, ncp = 3, graph = FALSE)
+
+# FactoMinR package function
+res.pca <- PCA(just.raw.counts_t, graph = FALSE)
+print(res.pca)
+print(res.hcpc)
+
+# An eigenvalue > 1 indicates that PCs account for more variance than accounted by one of the original variables in standardized data. 
+# This is commonly used as a cutoff point for which PCs are retained. This holds true only when the data are standardized.
+
+eig.val <- get_eigenvalue(res.pca)
+eig.val
+fviz_eig(res.pca, addlabels = TRUE, ylim = c(0, 50))
+dev.copy(tiff,"Your_Data.tiff",width=10, height=10, units="in",res=200) 
+dev.off() 
+
+## Extract the results
+var <- get_pca_var(res.pca)
+var
+# Coordinates
+head(var$coord)
+# Cos2: quality on the factore map
+head(var$cos2)
+# Contributions to the principal components
+head(var$contrib)
+
+## Correlation circle
+head(var$coord, 4)
+fviz_pca_var(res.pca, col.var = "black")
+
+# Positively correlated variables are grouped together.
+# Negatively correlated variables are positioned on opposite sides of the plot origin (opposed quadrants).
+# The distance between variables and the origin measures the quality of the variables on the factor map. 
+# Variables that are away from the origin are well represented on the factor map.
+
+## Quality of representation
+# The quality of representation of the variables on factor map is called cos2 (square cosine, squared coordinates). 
+# You can access to the cos2 as follow:
+head(var$cos2, 4)
+
+# visualize the cos2 of variables on all the dimensions using the corrplot package:
+library("corrplot")
+corrplot(var$cos2, is.corr=FALSE)
+# create a bar plot of variables cos2 using the function fviz_cos2()[in factoextra]:
+fviz_cos2(res.pca, choice = "var", axes = 1:2)
+dev.copy(tiff,"Your_Data.tiff",width=20, height=10, units="in",res=200) 
+dev.off() 
+
+# A high cos2 indicates a good representation of the variable on the principal component. 
+# In this case the variable is positioned close to the circumference of the correlation circle.
+# A low cos2 indicates that the variable is not perfectly represented by the PCs. 
+# In this case the variable is close to the center of the circle.
+
+fviz_pca_var(res.pca, col.var = "cos2",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"), 
+             repel = TRUE # Avoid text overlapping
+             )
+
+fviz_pca_var(res.pca, alpha.var = "cos2")
+
+fviz_pca_ind(res.pca, col.ind = "cos2", 
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE # Avoid text overlapping (slow if many points)
+             )
+
+fviz_pca_var(res.pca, col.var = "contrib",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07")
+             )
+
+## Color by groups
+
+set.seed(123)
+res.km <- kmeans(var$coord, centers = 3, nstart = 25)
+grp <- as.factor(res.km$cluster)
+# Color variables by groups
+fviz_pca_var(res.pca, col.var = grp, 
+             palette = c("#0073C2FF", "#EFC000FF", "#868686FF"),
+             legend.title = "Cluster")
+
+fviz_pca_ind(res.pca, col.ind = "cos2", 
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE # Avoid text overlapping (slow if many points)
+             )
+
+##Hierarchical Clustering on Principal Components
+
+# FactoMinR package function
+res.pca <- PCA(just.raw.counts_t, ncp = 3, graph = FALSE)
+res.hcpc <- HCPC(res.pca, graph = FALSE)
+fviz_dend(res.hcpc, 
+          cex = 0.5,                     # Label size
+          palette = "jco",               # Color palette see ?ggpubr::ggpar
+          rect = TRUE, rect_fill = TRUE, # Add rectangle around groups
+          rect_border = "jco",           # Rectangle color
+          labels_track_height = 0.5      # Augment the room for labels
+          )
+
+
+fviz_cluster(res.hcpc,
+             repel = TRUE,            # Avoid label overlapping
+             show.clust.cent = TRUE, # Show cluster centers
+             palette = "jco",         # Color palette see ?ggpubr::ggpar
+             ggtheme = theme_minimal(),
+             main = "Breast Tumor"
+             )
+
+
